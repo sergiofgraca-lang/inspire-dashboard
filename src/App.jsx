@@ -14,24 +14,50 @@ function App() {
 
   // 🔹 Salva no LocalStorage sempre que tasks mudar
   useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks))
-  }, [tasks])
+  const interval = setInterval(() => {
+    const now = new Date()
 
-  function addTask(text) {
-    const newTask = {
-      id: Date.now(),
-      text,
-      completed: false
-    }
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
+        if (
+          task.time &&
+          !task.completed &&
+          !task.notified &&
+          new Date(task.time) <= now
+        ) 
+        useEffect(() => {
+  localStorage.setItem("tasks", JSON.stringify(tasks))
+}, [tasks])
+        
+        {
+          alert("🔔 Lembrete: " + task.text)
+          return { ...task, notified: true }
+        }
+        return task
+      })
+    )
+  }, 60000) // verifica a cada 1 minuto
 
-    setTasks([...tasks, newTask])
+  return () => clearInterval(interval)
+}, [])
+
+  function addTask(text, time) {
+  const newTask = {
+    id: Date.now(),
+    text,
+    completed: false,
+    time: time || null,
+    notified: false
   }
 
-  function removeTask(id) {
-    setTasks(tasks.filter(task => task.id !== id))
-  }
+  setTasks(prev => [...prev, newTask])
+}
 
-  function toggleTask(id) {
+function removeTask(id) {
+  setTasks(prev => prev.filter(task => task.id !== id))
+}
+
+function toggleTask(id) {
     setTasks(
       tasks.map(task =>
         task.id === id

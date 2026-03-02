@@ -2,50 +2,36 @@ import { useState } from "react"
 
 function TaskInput({ addTask }) {
   const [text, setText] = useState("")
+  const [time, setTime] = useState("")
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (text.trim() === "") return
+    if (!text.trim()) return
 
-    addTask(text)
+    addTask(text, time)
     setText("")
+    setTime("")
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ display: "flex", marginTop: "20px" }}
-    >
+    <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
       <input
         type="text"
-        placeholder="Digite uma tarefa..."
+        placeholder="Digite a tarefa..."
         value={text}
         onChange={(e) => setText(e.target.value)}
-        style={{
-          flex: 1,
-          padding: "12px",
-          borderRadius: "10px",
-          border: "1px solid #ddd",
-          outline: "none",
-          fontSize: "16px"
-        }}
+        style={{ padding: "10px", width: "60%", marginRight: "10px" }}
       />
 
-      <button
-        type="submit"
-        style={{
-          marginLeft: "10px",
-          padding: "12px 20px",
-          borderRadius: "10px",
-          border: "none",
-          background: "#4CAF50",
-          color: "white",
-          fontWeight: "bold",
-          cursor: "pointer",
-          transition: "0.3s"
-        }}
-      >
-        +
+      <input
+        type="datetime-local"
+        value={time}
+        onChange={(e) => setTime(e.target.value)}
+        style={{ padding: "10px", marginRight: "10px" }}
+      />
+
+      <button type="submit">
+        Adicionar
       </button>
     </form>
   )
