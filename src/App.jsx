@@ -4,7 +4,6 @@ import TaskList from "./components/TaskList"
 
 function App() {
 
-  // 🔹 Carrega do LocalStorage ao iniciar
   const [tasks, setTasks] = useState(() => {
     const saved = localStorage.getItem("tasks")
     return saved ? JSON.parse(saved) : []
@@ -12,54 +11,79 @@ function App() {
 
   const [filter, setFilter] = useState("all")
 
-  // 🔹 Salva no LocalStorage sempre que tasks mudar
-  useEffect(() => {
-  const interval = setInterval(() => {
-    const now = new Date()
-
-    setTasks(prevTasks =>
-      prevTasks.map(task => {
-        if (
-          task.time &&
-          !task.completed &&
-          !task.notified &&
-          new Date(task.time) <= now
-        ) 
-        useEffect(() => {
-  localStorage.setItem("tasks", JSON.stringify(tasks))
-}, [tasks])
-        
-        {
-          alert("🔔 Lembrete: " + task.text)
-          return { ...task, notified: true }
-        }
-        return task
-      })
-    )
-  }, 60000) // verifica a cada 1 minuto
-
-  return () => clearInterval(interval)
-}, [])
-
-  function addTask(text, time) {
-  const newTask = {
-    id: Date.now(),
-    text,
-    completed: false,
-    time: time || null,
-    notified: false
+  // 🔊 Som protegido
+  const playSound = () => {
+    try {
+      const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg")
+      audio.volume = 0.8
+      audio.play()
+    } catch (error) {
+      console.log("Som bloqueado pelo navegador")
+    }
   }
 
-  setTasks(prev => [...prev, newTask])
-}
+  // 🔹 Salvar no LocalStorage
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks))
+  }, [tasks])
 
-function removeTask(id) {
-  setTasks(prev => prev.filter(task => task.id !== id))
-}
+  // 🔹 Permissão notificação segura
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission()
+    }
+  }, [])
 
-function toggleTask(id) {
-    setTasks(
-      tasks.map(task =>
+  // 🔹 Verificação precisa (1 segundo)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date()
+
+      setTasks(prevTasks =>
+        prevTasks.map(task => {
+          if (
+            task.time &&
+            !task.completed &&
+            !task.notified &&
+            new Date(task.time) <= now
+          ) {
+            if ("Notification" in window && Notification.permission === "granted") {
+              new Notification("🔔 Lembrete", {
+                body: task.text
+              })
+            }
+
+            playSound()
+
+            return { ...task, notified: true }
+          }
+          return task
+        })
+      )
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  function addTask(text, time) {
+    const newTask = {
+      id: Date.now(),
+      text,
+      completed: false,
+      time: time || null,
+      notified: false
+    }
+
+    setTasks(prev => [...prev, newTask])
+  }
+
+  function removeTask(id) {
+    setTasks(prev => prev.filter(task => task.id !== id))
+  }
+
+  function toggleTask(id) {
+    setTasks(prev =>
+      prev.map(task =>
         task.id === id
           ? { ...task, completed: !task.completed }
           : task
@@ -74,6 +98,31 @@ function toggleTask(id) {
     if (filter === "completed") return task.completed
     if (filter === "pending") return !task.completed
     return true
+  })
+
+  // 🎨 Função de estilo dos botões (CORRIGE DEFINITIVO)
+  const buttonStyle = (type) => ({
+    margin: "5px",
+    padding: "10px 18px",
+    borderRadius: "10px",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: "bold",
+    fontSize: "14px",
+    transition: "all 0.2s ease",
+    backgroundColor:
+      filter === type
+        ? type === "all"
+          ? "#203a43"
+          : type === "pending"
+          ? "#ff9800"
+          : "#4caf50"
+        : "#f0f0f0",
+    color: filter === type ? "white" : "#333",
+    boxShadow:
+      filter === type
+        ? "0 4px 10px rgba(0,0,0,0.2)"
+        : "none"
   })
 
   return (
@@ -112,15 +161,16 @@ function toggleTask(id) {
           Total: {total} | Concluídas: {completed}
         </p>
 
-        {/* 🔹 Botões de filtro */}
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
-          <button onClick={() => setFilter("all")} style={{ margin: "5px" }}>
+          <button style={buttonStyle("all")} onClick={() => setFilter("all")}>
             Todas
           </button>
-          <button onClick={() => setFilter("pending")} style={{ margin: "5px" }}>
+
+          <button style={buttonStyle("pending")} onClick={() => setFilter("pending")}>
             Pendentes
           </button>
-          <button onClick={() => setFilter("completed")} style={{ margin: "5px" }}>
+
+          <button style={buttonStyle("completed")} onClick={() => setFilter("completed")}>
             Concluídas
           </button>
         </div>
