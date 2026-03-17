@@ -11,6 +11,35 @@ function App() {
 
   const [filter, setFilter] = useState("all")
 
+  // 💾 EXPORTAR BACKUP
+  function exportarDados() {
+    const data = localStorage.getItem("tasks")
+
+    const blob = new Blob([data], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "tarefas_backup.json"
+    a.click()
+  }
+
+  // 📂 IMPORTAR BACKUP
+  function importarDados(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+
+    reader.onload = function(e) {
+      const dados = JSON.parse(e.target.result)
+      localStorage.setItem("tasks", JSON.stringify(dados))
+      window.location.reload()
+    }
+
+    reader.readAsText(file)
+  }
+
   // 🔊 Som protegido
   const playSound = () => {
     try {
@@ -27,14 +56,14 @@ function App() {
     localStorage.setItem("tasks", JSON.stringify(tasks))
   }, [tasks])
 
-  // 🔹 Permissão notificação segura
+  // 🔹 Permissão notificação
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission()
     }
   }, [])
 
-  // 🔹 Verificação precisa (1 segundo)
+  // 🔹 Verificação de tempo
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date()
@@ -100,7 +129,6 @@ function App() {
     return true
   })
 
-  // 🎨 Função de estilo dos botões (CORRIGE DEFINITIVO)
   const buttonStyle = (type) => ({
     margin: "5px",
     padding: "10px 18px",
@@ -113,15 +141,15 @@ function App() {
     backgroundColor:
       filter === type
         ? type === "all"
-          ? "#203a43"
+          ? "#1046db"
           : type === "pending"
-          ? "#ff9800"
+          ? "#ff0000"
           : "#4caf50"
-        : "#f0f0f0",
-    color: filter === type ? "white" : "#333",
+        : "#eedf09d8",
+    color: filter === type ? "white" : "#1679b2",
     boxShadow:
       filter === type
-        ? "0 4px 10px rgba(0,0,0,0.2)"
+        ? "0 4px 10px rgba(230, 11, 186, 0.2)"
         : "none"
   })
 
@@ -151,15 +179,39 @@ function App() {
             textAlign: "center",
             fontSize: "34px",
             marginBottom: "10px",
-            color: "#203a43"
+            color: "#470f4e"
           }}
         >
-          🚀 Inspire Dashboard
+          🚀 MINHAS TAREFAS
         </h1>
 
-        <p style={{ textAlign: "center", marginBottom: "20px", color: "#555" }}>
+        <p style={{ textAlign: "center", marginBottom: "20px", color: "#a70b0b" }}>
           Total: {total} | Concluídas: {completed}
         </p>
+
+        {/* 🔥 NOVOS BOTÕES DE BACKUP */}
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
+          <button
+            onClick={exportarDados}
+            style={{
+              margin: "5px",
+              padding: "10px",
+              borderRadius: "10px",
+              border: "none",
+              backgroundColor: "#0d6efd",
+              color: "white",
+              cursor: "pointer"
+            }}
+          >
+            💾 Backup
+          </button>
+
+          <input
+            type="file"
+            onChange={importarDados}
+            style={{ margin: "5px" }}
+          />
+        </div>
 
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <button style={buttonStyle("all")} onClick={() => setFilter("all")}>
